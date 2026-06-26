@@ -1,0 +1,15 @@
+{
+  "name": "express-api-example",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "agents-core": "workspace:*",
+    "agents-express": "workspace:*",
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0"
+  }
+}

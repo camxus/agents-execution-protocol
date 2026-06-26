@@ -1,0 +1,17 @@
+{
+  "name": "next-crm-example",
+  "private": true,
+  "scripts": {
+    "dev": "next dev"
+  },
+  "dependencies": {
+    "agents-core": "workspace:*",
+    "agents-next": "workspace:*",
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
