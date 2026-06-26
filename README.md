@@ -1,6 +1,6 @@
-# Agents
+# Agents Execution Protocol
 
-A TypeScript agent framework for building LLM-powered applications with Express, Next.js, and React adapters.
+A TypeScript agent framework for building LLM-powered applications. Provides a unified protocol for agent execution across Express, Next.js, and React runtimes.
 
 ## Packages
 

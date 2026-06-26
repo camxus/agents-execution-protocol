@@ -1,5 +1,5 @@
 {
-  "name": "agents-monorepo",
+  "name": "agents-execution-protocol",
   "private": true,
   "scripts": {
     "build": "turbo run build",

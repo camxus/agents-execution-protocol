@@ -49,6 +49,9 @@ jobs:
       - run: pnpm publish packages/express-agents --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm publish packages/react-agents --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - run: git push origin HEAD:main
       - run: git push origin v${{ github.event.inputs.version }}

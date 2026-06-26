@@ -7,7 +7,7 @@ if (!newVersion) {
   process.exit(1);
 }
 
-const packages = ['core', 'next-agents', 'express-agents'];
+const packages = ['core', 'next-agents', 'express-agents', 'react-agents'];
 
 for (const pkg of packages) {
   const pkgPath = path.join(process.cwd(), 'packages', pkg, 'package.json');
