@@ -9,7 +9,7 @@ A TypeScript agent framework for building LLM-powered applications. Provides a u
 | `@agents/core` | Agent execution engine, tools, planning, and state machine |
 | `@agents/express` | Express router adapter for agent endpoints |
 | `@agents/next` | Next.js App Router and Server Actions adapter |
-| `@agents/react` | React hooks and components for agent UI |
+| `@agents/react` | React hooks for agent integration |
 
 ## Quick Start
 
@@ -44,52 +44,91 @@ pnpm add @agents/core @agents/express @agents/react @agents/next
 Create an agent with `createAgent(config)`:
 
 ```ts
-import { createAgent, createModel, textTool, z } from "@agents/core";
+import { createAgent, createTool } from "@agents/core";
+import { createModel } from "@agents/core/models";
+import { z } from "zod";
 
 const agent = createAgent({
   model: createModel("anthropic:claude-3-opus"),
-  tools: {
-    search: textTool({
+  tools: [
+    createTool({
+      name: "search",
       description: "Search the web",
-      parameters: z.object({ query: z.string() }),
-      execute: async ({ query }) => { /* ... */ }
+      schema: z.object({ query: z.string() }),
+      execute: async ({ query }, ctx) => { /* ... */ }
     })
-  },
-  intents: {
-    chat: {
+  ],
+  intents: [
+    {
+      name: "chat",
       description: "General conversation",
       tools: ["search"]
     }
-  }
+  ]
 });
 ```
 
 ### Tool
 
-Tools wrap a Zod schema and async execute function:
+Tools wrap a Zod schema and async execute function. The `createTool` helper validates args and provides a clean interface:
 
 ```ts
+import { createTool } from "@agents/core";
 import { z } from "zod";
 
-const weatherTool = {
+export const weatherTool = createTool({
   name: "getWeather",
   description: "Get current weather",
   schema: z.object({ location: z.string() }),
-  execute: async ({ location }) => fetchWeather(location)
-};
+  execute: async ({ location }, ctx) => {
+    return fetchWeather(location);
+  }
+});
 ```
 
 ### Intent
 
-Intents are named routing targets with descriptions for the planner:
+Intents define routing targets for the planner. Each intent maps to available tools:
 
 ```ts
-agent.intent("bookFlight", {
-  description: "Search and book flights",
-  tools: ["searchFlights", "bookFlight"],
-  fields: ["destination", "dates", "passengers"]
+import { createAgent } from "@agents/core";
+
+const agent = createAgent({
+  intents: [
+    {
+      name: "bookFlight",
+      description: "Search and book flights",
+      tools: ["searchFlights", "bookFlight"],
+      fields: ["destination", "dates", "passengers"]
+    }
+  ]
 });
 ```
+
+### Middleware
+
+Middleware intercepts agent events for cross-cutting concerns like summarization and approvals:
+
+```ts
+import { createAgent } from "@agents/core";
+import { summarizationMiddleware, humanInTheLoopMiddleware } from "@agents/core/middleware";
+
+const agent = createAgent({ /* ... */ });
+
+agent.use(
+  summarizationMiddleware({
+    model: createModel("anthropic:claude-3-haiku"),
+    trigger: { tokens: 4000 }
+  }),
+  humanInTheLoopMiddleware({
+    interruptOn: {
+      delete_record: { allowedDecisions: ["approve", "reject"] }
+    }
+  })
+);
+```
+
+Each middleware receives `(event, next)` and can inspect/modify events before calling `next()`.
 
 ## Usage
 
@@ -118,18 +157,63 @@ import { nextAgent } from "@agents/next";
 export const { POST } = nextAgent(agent);
 ```
 
+Or use streaming:
+
+```ts
+import { nextStreamAgent } from "@agents/next";
+
+export const { POST } = nextStreamAgent(agent);
+```
+
 ### React
 
 ```tsx
-import { AgentProvider, FloatingChat } from "@agents/react";
+import { AgentProvider } from "@agents/react";
 
 function App() {
   return (
-    <AgentProvider endpoint="/api/agent/stream">
-      <FloatingChat hotkey="cmd+k" />
+    <AgentProvider agent={agent}>
+      <MyComponent />
     </AgentProvider>
   );
 }
+```
+
+Use the `useAgent()` hook to access agent state:
+
+```tsx
+import { useAgent } from "@agents/react";
+
+function ChatComponent() {
+  const { status, messages, send, clear } = useAgent();
+  
+  return (
+    <div>
+      <p>Status: {status}</p>
+      <button onClick={() => send("Hello!")}>Send</button>
+    </div>
+  );
+}
+```
+
+Or use `useChat()` for a simplified interface.
+
+### Model Adapters
+
+```ts
+import { createModel } from "@agents/core/models";
+
+// Named provider
+const model = createModel("anthropic:claude-3-opus");
+const model = createModel("openai:gpt-4o");
+const model = createModel("gemini:gemini-pro");
+
+// Custom endpoint
+const model = createModel({
+  baseUrl: "https://my-llm.internal/v1",
+  apiKey: process.env.LLM_KEY,
+  model: "my-model-name",
+});
 ```
 
 ## Development
